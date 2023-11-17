@@ -4,31 +4,29 @@ metadata:
   annotations:
     meta.helm.sh/release-name: kube-prom-stack
     meta.helm.sh/release-namespace: observability
-    prometheus-operator-input-hash: "5508625270235991187"
+    prometheus-operator-input-hash: "18443114398095720446"
   creationTimestamp: "2023-10-27T18:54:28Z"
   generation: 1
   labels:
-    app: kube-prometheus-stack-prometheus
+    app: kube-prometheus-stack-alertmanager
     app.kubernetes.io/instance: kube-prom-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
     app.kubernetes.io/version: 45.5.0
     chart: kube-prometheus-stack-45.5.0
     heritage: Helm
-    operator.prometheus.io/name: kube-prom-stack-kube-prome-prometheus
-    operator.prometheus.io/shard: "0"
     release: kube-prom-stack
-  name: prometheus-kube-prom-stack-kube-prome-prometheus
+  name: alertmanager-kube-prom-stack-kube-prome-alertmanager
   namespace: observability
   ownerReferences:
   - apiVersion: monitoring.coreos.com/v1
     blockOwnerDeletion: true
     controller: true
-    kind: Prometheus
-    name: kube-prom-stack-kube-prome-prometheus
-    uid: adfbe101-684b-4800-bc7c-3b59ced512a6
-  resourceVersion: "833783"
-  uid: 33f80c6e-c463-4a5c-95d1-f2ec4c332d85
+    kind: Alertmanager
+    name: kube-prom-stack-kube-prome-alertmanager
+    uid: 10a20063-a668-4611-b0f1-a94c0d5bd708
+  resourceVersion: "997529"
+  uid: 6b0fec8d-0b29-446c-a337-ee87cff4ac6d
 spec:
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Retain
@@ -38,104 +36,104 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/instance: kube-prom-stack-kube-prome-prometheus
+      alertmanager: kube-prom-stack-kube-prome-alertmanager
+      app.kubernetes.io/instance: kube-prom-stack-kube-prome-alertmanager
       app.kubernetes.io/managed-by: prometheus-operator
-      app.kubernetes.io/name: prometheus
-      operator.prometheus.io/name: kube-prom-stack-kube-prome-prometheus
-      operator.prometheus.io/shard: "0"
-      prometheus: kube-prom-stack-kube-prome-prometheus
-  serviceName: prometheus-operated
+      app.kubernetes.io/name: alertmanager
+  serviceName: alertmanager-operated
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: prometheus
+        kubectl.kubernetes.io/default-container: alertmanager
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: kube-prom-stack-kube-prome-prometheus
+        alertmanager: kube-prom-stack-kube-prome-alertmanager
+        app.kubernetes.io/instance: kube-prom-stack-kube-prome-alertmanager
         app.kubernetes.io/managed-by: prometheus-operator
-        app.kubernetes.io/name: prometheus
-        app.kubernetes.io/version: 2.42.0
-        operator.prometheus.io/name: kube-prom-stack-kube-prome-prometheus
-        operator.prometheus.io/shard: "0"
-        prometheus: kube-prom-stack-kube-prome-prometheus
+        app.kubernetes.io/name: alertmanager
+        app.kubernetes.io/version: 0.25.0
     spec:
-      automountServiceAccountToken: true
       containers:
       - args:
-        - --web.console.templates=/etc/prometheus/consoles
-        - --web.console.libraries=/etc/prometheus/console_libraries
-        - --storage.tsdb.retention.time=10d
-        - --config.file=/etc/prometheus/config_out/prometheus.env.yaml
-        - --storage.tsdb.path=/prometheus
-        - --web.enable-lifecycle
-        - --web.external-url=http://kube-prom-stack-kube-prome-prometheus.observability:9090
+        - --config.file=/etc/alertmanager/config_out/alertmanager.env.yaml
+        - --storage.path=/alertmanager
+        - --data.retention=120h
+        - --cluster.listen-address=
+        - --web.listen-address=:9093
+        - --web.external-url=http://kube-prom-stack-kube-prome-alertmanager.observability:9093
         - --web.route-prefix=/
-        - --storage.tsdb.wal-compression
-        - --web.config.file=/etc/prometheus/web_config/web-config.yaml
-        image: quay.io/prometheus/prometheus:v2.42.0
+        - --cluster.peer=alertmanager-kube-prom-stack-kube-prome-alertmanager-0.alertmanager-operated:9094
+        - --cluster.reconnect-timeout=5m
+        - --web.config.file=/etc/alertmanager/web_config/web-config.yaml
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        image: quay.io/prometheus/alertmanager:v0.25.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
-          failureThreshold: 6
+          failureThreshold: 10
           httpGet:
             path: /-/healthy
             port: http-web
             scheme: HTTP
-          periodSeconds: 5
+          periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 3
-        name: prometheus
+        name: alertmanager
         ports:
-        - containerPort: 9090
+        - containerPort: 9093
           name: http-web
           protocol: TCP
+        - containerPort: 9094
+          name: mesh-tcp
+          protocol: TCP
+        - containerPort: 9094
+          name: mesh-udp
+          protocol: UDP
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 10
           httpGet:
             path: /-/ready
             port: http-web
             scheme: HTTP
+          initialDelaySeconds: 3
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 3
-        resources: {}
+        resources:
+          requests:
+            memory: 200Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
           readOnlyRootFilesystem: true
-        startupProbe:
-          failureThreshold: 60
-          httpGet:
-            path: /-/ready
-            port: http-web
-            scheme: HTTP
-          periodSeconds: 15
-          successThreshold: 1
-          timeoutSeconds: 3
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
-        - mountPath: /etc/prometheus/config_out
+        - mountPath: /etc/alertmanager/config
+          name: config-volume
+        - mountPath: /etc/alertmanager/config_out
           name: config-out
           readOnly: true
-        - mountPath: /etc/prometheus/certs
+        - mountPath: /etc/alertmanager/certs
           name: tls-assets
           readOnly: true
-        - mountPath: /prometheus
-          name: prometheus-kube-prom-stack-kube-prome-prometheus-db
-        - mountPath: /etc/prometheus/rules/prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-          name: prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-        - mountPath: /etc/prometheus/web_config/web-config.yaml
+        - mountPath: /alertmanager
+          name: alertmanager-kube-prom-stack-kube-prome-alertmanager-db
+        - mountPath: /etc/alertmanager/web_config/web-config.yaml
           name: web-config
           readOnly: true
           subPath: web-config.yaml
       - args:
         - --listen-address=:8080
-        - --reload-url=http://127.0.0.1:9090/-/reload
-        - --config-file=/etc/prometheus/config/prometheus.yaml.gz
-        - --config-envsubst-file=/etc/prometheus/config_out/prometheus.env.yaml
-        - --watched-dir=/etc/prometheus/rules/prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
+        - --reload-url=http://127.0.0.1:9093/-/reload
+        - --config-file=/etc/alertmanager/config/alertmanager.yaml.gz
+        - --config-envsubst-file=/etc/alertmanager/config_out/alertmanager.env.yaml
         command:
         - /bin/prometheus-config-reloader
         env:
@@ -145,7 +143,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: SHARD
-          value: "0"
+          value: "-1"
         image: quay.io/prometheus-operator/prometheus-config-reloader:v0.63.0
         imagePullPolicy: IfNotPresent
         name: config-reloader
@@ -169,59 +167,12 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
-        - mountPath: /etc/prometheus/config
-          name: config
-        - mountPath: /etc/prometheus/config_out
+        - mountPath: /etc/alertmanager/config
+          name: config-volume
+          readOnly: true
+        - mountPath: /etc/alertmanager/config_out
           name: config-out
-        - mountPath: /etc/prometheus/rules/prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-          name: prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
       dnsPolicy: ClusterFirst
-      initContainers:
-      - args:
-        - --watch-interval=0
-        - --listen-address=:8080
-        - --config-file=/etc/prometheus/config/prometheus.yaml.gz
-        - --config-envsubst-file=/etc/prometheus/config_out/prometheus.env.yaml
-        - --watched-dir=/etc/prometheus/rules/prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-        command:
-        - /bin/prometheus-config-reloader
-        env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-        - name: SHARD
-          value: "0"
-        image: quay.io/prometheus-operator/prometheus-config-reloader:v0.63.0
-        imagePullPolicy: IfNotPresent
-        name: init-config-reloader
-        ports:
-        - containerPort: 8080
-          name: reloader-web
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 200m
-            memory: 50Mi
-          requests:
-            cpu: 200m
-            memory: 50Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: FallbackToLogsOnError
-        volumeMounts:
-        - mountPath: /etc/prometheus/config
-          name: config
-        - mountPath: /etc/prometheus/config_out
-          name: config-out
-        - mountPath: /etc/prometheus/rules/prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-          name: prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
@@ -229,42 +180,38 @@ spec:
         runAsGroup: 2000
         runAsNonRoot: true
         runAsUser: 1000
-      serviceAccount: kube-prom-stack-kube-prome-prometheus
-      serviceAccountName: kube-prom-stack-kube-prome-prometheus
-      terminationGracePeriodSeconds: 600
+      serviceAccount: kube-prom-stack-kube-prome-alertmanager
+      serviceAccountName: kube-prom-stack-kube-prome-alertmanager
+      terminationGracePeriodSeconds: 120
       volumes:
-      - name: config
+      - name: config-volume
         secret:
           defaultMode: 420
-          secretName: prometheus-kube-prom-stack-kube-prome-prometheus
+          secretName: alertmanager-kube-prom-stack-kube-prome-alertmanager-generated
       - name: tls-assets
         projected:
           defaultMode: 420
           sources:
           - secret:
-              name: prometheus-kube-prom-stack-kube-prome-prometheus-tls-assets-0
+              name: alertmanager-kube-prom-stack-kube-prome-alertmanager-tls-assets-0
       - emptyDir:
           medium: Memory
         name: config-out
-      - configMap:
-          defaultMode: 420
-          name: prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
-        name: prometheus-kube-prom-stack-kube-prome-prometheus-rulefiles-0
       - name: web-config
         secret:
           defaultMode: 420
-          secretName: prometheus-kube-prom-stack-kube-prome-prometheus-web-config
+          secretName: alertmanager-kube-prom-stack-kube-prome-alertmanager-web-config
       - emptyDir: {}
-        name: prometheus-kube-prom-stack-kube-prome-prometheus-db
+        name: alertmanager-kube-prom-stack-kube-prome-alertmanager-db
   updateStrategy:
     type: RollingUpdate
 status:
   availableReplicas: 1
   collisionCount: 0
   currentReplicas: 1
-  currentRevision: prometheus-kube-prom-stack-kube-prome-prometheus-5cf8688487
+  currentRevision: alertmanager-kube-prom-stack-kube-prome-alertmanager-5446cbcc6c
   observedGeneration: 1
   readyReplicas: 1
   replicas: 1
-  updateRevision: prometheus-kube-prom-stack-kube-prome-prometheus-5cf8688487
+  updateRevision: alertmanager-kube-prom-stack-kube-prome-alertmanager-5446cbcc6c
   updatedReplicas: 1
