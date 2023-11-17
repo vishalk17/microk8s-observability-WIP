@@ -243,8 +243,9 @@ spec:
           sources:
           - secret:
               name: prometheus-kube-prom-stack-kube-prome-prometheus-tls-assets-0
-      - emptyDir:
-          medium: Memory
+      - hostPath:
+          path: /opt/observability/prometheus-kube-prom-stack-kube-prome-prometheus/config-out
+          type: DirectoryOrCreate
         name: config-out
       - configMap:
           defaultMode: 420
@@ -254,7 +255,9 @@ spec:
         secret:
           defaultMode: 420
           secretName: prometheus-kube-prom-stack-kube-prome-prometheus-web-config
-      - emptyDir: {}
+      - hostPath:
+          path: /opt/observability/prometheus-kube-prom-stack-kube-prome-prometheus/db
+          type: DirectoryOrCreate
         name: prometheus-kube-prom-stack-kube-prome-prometheus-db
   updateStrategy:
     type: RollingUpdate
