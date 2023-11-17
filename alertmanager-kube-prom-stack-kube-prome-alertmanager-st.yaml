@@ -194,14 +194,17 @@ spec:
           sources:
           - secret:
               name: alertmanager-kube-prom-stack-kube-prome-alertmanager-tls-assets-0
-      - emptyDir:
-          medium: Memory
+      - hostPath:
+          path: /opt/observability/alertmanager-kube-prom-stack-kube-prome-alertmanager/config-out
+          type: DirectoryOrCreate
         name: config-out
       - name: web-config
         secret:
           defaultMode: 420
           secretName: alertmanager-kube-prom-stack-kube-prome-alertmanager-web-config
-      - emptyDir: {}
+      - hostPath:
+          path: /opt/observability/alertmanager-kube-prom-stack-kube-prome-alertmanager/db
+          type: DirectoryOrCreate
         name: alertmanager-kube-prom-stack-kube-prome-alertmanager-db
   updateStrategy:
     type: RollingUpdate
