@@ -101,13 +101,17 @@ spec:
       serviceAccountName: loki
       terminationGracePeriodSeconds: 4800
       volumes:
-      - emptyDir: {}
+      - hostPath:
+          path: /opt/observability/loki/tmp
+          type: DirectoryOrCreate
         name: tmp
       - name: config
         secret:
           defaultMode: 420
           secretName: loki
-      - emptyDir: {}
+      - hostPath:
+          path: /opt/observability/loki/storage
+          type: DirectoryOrCreate
         name: storage
   updateStrategy:
     type: RollingUpdate
