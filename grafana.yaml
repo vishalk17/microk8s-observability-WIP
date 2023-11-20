@@ -2,21 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "4"
+    deployment.kubernetes.io/revision: "1"
     meta.helm.sh/release-name: kube-prom-stack
     meta.helm.sh/release-namespace: observability
-  creationTimestamp: "2023-10-27T18:54:24Z"
-  generation: 4
+  creationTimestamp: "2023-11-17T20:34:26Z"
+  generation: 1
   labels:
     app.kubernetes.io/instance: kube-prom-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: grafana
-    app.kubernetes.io/version: 9.3.8
-    helm.sh/chart: grafana-6.51.2
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.6
   name: kube-prom-stack-grafana
   namespace: observability
-  resourceVersion: "667754"
-  uid: bf1712c4-7eec-4baf-93c6-12235216507b
+  resourceVersion: "1124273"
+  uid: e2b79dfe-2d06-4f95-8f73-a3ba50afca2b
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
@@ -33,10 +33,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 984721f4a9edbcbb3089100a378a2f1bdcb05f0206d388fe85af46a4c6fea8bf
+        checksum/config: 2ddee3d1014ea32d04f82fcf49bf8caa582899e12cf1e5dc2820bc64ca7a3cf8
         checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-        checksum/sc-dashboard-provider-config: 1bedc881a103b6af0b5a9282f2085a08440edbf1412796a59b6fb4b546b4a98d
-        checksum/secret: 3494940d8e928be51c06b551afc839a94c2bd812a4b46487316cd9380ff9b7f9
+        checksum/sc-dashboard-provider-config: 8e5d70d5df530f0e97dcd7cb0edaa6d2189aae4baf0026482301022f1b02e8fd
+        checksum/secret: ad20aac738eac10402b8697f98686e4b941400282472c3995460aa1d1d1c3d63
+        kubectl.kubernetes.io/default-container: grafana
       creationTimestamp: null
       labels:
         app.kubernetes.io/instance: kube-prom-stack
@@ -55,6 +56,8 @@ spec:
           value: /tmp/dashboards
         - name: RESOURCE
           value: both
+        - name: NAMESPACE
+          value: ALL
         - name: REQ_USERNAME
           valueFrom:
             secretKeyRef:
@@ -69,10 +72,17 @@ spec:
           value: http://localhost:3000/api/admin/provisioning/dashboards/reload
         - name: REQ_METHOD
           value: POST
-        image: quay.io/kiwigrid/k8s-sidecar:1.22.0
+        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
         imagePullPolicy: IfNotPresent
         name: grafana-sc-dashboard
         resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -103,10 +113,17 @@ spec:
           value: http://localhost:3000/api/admin/provisioning/datasources/reload
         - name: REQ_METHOD
           value: POST
-        image: quay.io/kiwigrid/k8s-sidecar:1.22.0
+        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
         imagePullPolicy: IfNotPresent
         name: grafana-sc-datasources
         resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -136,17 +153,7 @@ spec:
           value: /var/lib/grafana/plugins
         - name: GF_PATHS_PROVISIONING
           value: /etc/grafana/provisioning
-        - name: GF_SMTP_ENABLED
-          value: "true"
-        - name: GF_SMTP_HOST
-          value: smtp.gmail.com:465
-        - name: GF_SMTP_PASSWORD
-          value: ejkjwqnodwibgxpw
-        - name: GF_SMTP_USER
-          value: siddhesh.learn@gmail.com
-        - name: GF_SMTP_FROM_NAME
-          value: 'Grafana k8s Alert: '
-        image: grafana/grafana:9.3.8
+        image: docker.io/grafana/grafana:10.1.5
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 10
@@ -179,6 +186,13 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -201,6 +215,7 @@ spec:
       securityContext:
         fsGroup: 472
         runAsGroup: 472
+        runAsNonRoot: true
         runAsUser: 472
       serviceAccount: kube-prom-stack-grafana
       serviceAccountName: kube-prom-stack-grafana
@@ -210,38 +225,32 @@ spec:
           defaultMode: 420
           name: kube-prom-stack-grafana
         name: config
-      - hostPath:
-          path: /opt/observability/kube-prom-stack-grafana/storage
-          type: DirectoryOrCreate
+      - emptyDir: {}
         name: storage
-      - hostPath:
-          path: /opt/observability/kube-prom-stack-grafana/sc-dashboard-volume
-          type: DirectoryOrCreate
+      - emptyDir: {}
         name: sc-dashboard-volume
       - configMap:
           defaultMode: 420
           name: kube-prom-stack-grafana-config-dashboards
         name: sc-dashboard-provider
-      - hostPath:
-          path: /opt/observability/kube-prom-stack-grafana/sc-datasources-volume
-          type: DirectoryOrCreate
+      - emptyDir: {}
         name: sc-datasources-volume
 status:
   availableReplicas: 1
   conditions:
-  - lastTransitionTime: "2023-10-27T18:54:36Z"
-    lastUpdateTime: "2023-10-27T18:54:36Z"
+  - lastTransitionTime: "2023-11-17T20:34:56Z"
+    lastUpdateTime: "2023-11-17T20:34:56Z"
     message: Deployment has minimum availability.
     reason: MinimumReplicasAvailable
     status: "True"
     type: Available
-  - lastTransitionTime: "2023-11-07T20:11:31Z"
-    lastUpdateTime: "2023-11-07T20:11:56Z"
-    message: ReplicaSet "kube-prom-stack-grafana-8459d7bb68" has successfully progressed.
+  - lastTransitionTime: "2023-11-17T20:34:27Z"
+    lastUpdateTime: "2023-11-17T20:34:56Z"
+    message: ReplicaSet "kube-prom-stack-grafana-6d98b5b7f" has successfully progressed.
     reason: NewReplicaSetAvailable
     status: "True"
     type: Progressing
-  observedGeneration: 4
+  observedGeneration: 1
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
