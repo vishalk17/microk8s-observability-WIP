@@ -36,12 +36,12 @@ $helm upgrade --install kube-prom-stack kube-prom-stack/kube-prometheus-stack \
   --set=kubeScheduler.endpoints=$NODE_ENDPOINTS
 
 # Install loki
-$helm install loki loki-tempo/loki-stack \
+$helm upgrade --install loki loki-tempo/loki-stack \
   --create-namespace --namespace $namespace \
   --set="grafana.sidecar.datasources.enabled=false"
 
 # Install Tempo
-$helm install tempo loki-tempo/tempo \
+$helm upgrade --install tempo loki-tempo/tempo \
   --create-namespace --namespace $namespace
 
 echo "====================================="
