@@ -13,7 +13,7 @@ $helm repo add kube-prom-stack https://prometheus-community.github.io/helm-chart
 $helm repo add loki-tempo https://grafana.github.io/helm-charts
 
 # Update Helm repos
-#$helm repo update
+$helm repo update
 
 # Get internal IP addresses of all nodes
 #NODE_ENDPOINTS=$($kubectl get nodes -o jsonpath={.items[*].status.addresses[?\(@.type==\"InternalIP\"\)].address} | sed 's/\s\+/,/g')
